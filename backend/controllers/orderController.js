@@ -67,7 +67,7 @@ const getUserOrders = async (req, res) => {
       items: order.items.map(item => ({
         id: item.menuItem._id,
         name: item.menuItem.name,
-        qty: item.quantity, // ✅ Ensure quantity is included
+        qty: item.quantity, 
         price: item.menuItem.price
       }))
     }));
@@ -88,7 +88,7 @@ const getAllOrders = async (req, res) => {
 
     const formattedOrders = orders.map(order => ({
       _id: order._id,
-      customer: order.userId.name, // Assuming user has a name field
+      customer: order.userId.name, 
       totalAmount: order.totalAmount,
       status: order.status,
       date: order.createdAt.toISOString().split("T")[0],
