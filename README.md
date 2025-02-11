@@ -104,7 +104,7 @@ NEXT_PUBLIC_API_BASE_URL=backend_api_url
 
 ## 🔧 Admin Dashboard (Future Implementations)
 - Navigation:
-- Admin Workflow Video: [View Here](https://drive.google.com/file/d/19ddoGR5T62K_t2Zu-Uh542PlME9mGP4/view?usp=sharing)
+- Admin Workflow Video: [View Here](https://drive.google.com/file/d/19ddoGR5T62K_t2-Zu-Uh542PlME9mGP4/view)
 
 ## 📌 User View
 - [Home](https://craft-my-plate-lovat.vercel.app/Home)
