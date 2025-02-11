@@ -19,7 +19,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [newStatus, setNewStatus] = useState('');
   const [showPopup, setShowPopup] = useState(false);

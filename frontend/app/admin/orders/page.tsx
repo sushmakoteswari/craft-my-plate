@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import AdminLayout from "../page";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import AdminLayout from "../page";
+import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -11,25 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ProtectedRoute from "@/components/protected";
 
-
 const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
+    if (!API_URL) {
+      console.error("API URL is not defined");
+      return;
+    }
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.get(`${API_URL}/adminusers`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+      
       setUsers(
         response.data.map((user: any) => ({
           id: user._id,
@@ -45,10 +43,15 @@ const UsersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const updateUser = async (id: string, updatedData: { name?: string; email?: string; role?: string }) => {
     try {
+      if (!API_URL) throw new Error("API URL is not defined");
       const token = localStorage.getItem("token");
 
       const response = await fetch(`${API_URL}/adminusers/${id}`, {
@@ -63,7 +66,6 @@ const UsersPage: React.FC = () => {
       if (!response.ok) throw new Error("Failed to update user");
 
       const updatedUser = await response.json();
-
       setUsers(users.map((user) => (user.id === id ? { ...user, ...updatedUser } : user)));
       setEditingUser(null);
       toast.success("User updated successfully!");
@@ -75,8 +77,9 @@ const UsersPage: React.FC = () => {
 
   const deleteUser = async (id: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
-
+    
     try {
+      if (!API_URL) throw new Error("API URL is not defined");
       const token = localStorage.getItem("token");
 
       const response = await fetch(`${API_URL}/adminusers/${id}`, {
@@ -138,48 +141,54 @@ const UsersPage: React.FC = () => {
         </Table>
       )}
 
-      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-          </DialogHeader>
-          <Input
-            type="text"
-            placeholder="Name"
-            value={editingUser?.name || ""}
-            onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-            className="mb-3"
-          />
-          <Input
-            type="email"
-            placeholder="Email"
-            value={editingUser?.email || ""}
-            onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-            className="mb-3"
-          />
-          <Select
-            onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
-            value={editingUser?.role || ""}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="user">User</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button variant="secondary" onClick={() => setEditingUser(null)}>
-              Cancel
-            </Button>
-            <Button variant="default" onClick={() => updateUser(editingUser.id, editingUser)}>
-              Save Changes
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Edit User</DialogTitle>
+    </DialogHeader>
+    {editingUser && (
+      <>
+        <Input
+          type="text"
+          placeholder="Name"
+          value={editingUser.name}
+          onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+          className="mb-3"
+          disabled
+        />
+        <Input
+          type="email"
+          placeholder="Email"
+          value={editingUser.email}
+          onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+          className="mb-3"
+        />
+        <Select
+          onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
+          value={editingUser.role}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="manager">Manager</SelectItem>
+            <SelectItem value="user">User</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex justify-end space-x-2 mt-4">
+          <Button variant="secondary" onClick={() => setEditingUser(null)}>
+            Cancel
+          </Button>
+          <Button variant="default" onClick={() => updateUser(editingUser.id, editingUser)}>
+            Save Changes
+          </Button>
+        </div>
+      </>
+    )}
+  </DialogContent>
+</Dialog>
+
     </div>
   </ProtectedRoute>
   );

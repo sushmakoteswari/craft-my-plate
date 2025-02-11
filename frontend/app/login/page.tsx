@@ -3,6 +3,8 @@ import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
+import Image from 'next/image';
+
 
 type FormMode = "login" | "register";
 
@@ -91,7 +93,6 @@ export default function AuthPage() {
     e.preventDefault();
   
     if (!validateForm()) return;
-  
     setIsLoading(true);
   
     try {
@@ -105,61 +106,36 @@ export default function AuthPage() {
         body: JSON.stringify(formData),
       });
   
-      console.log("Raw Response:", response);
-const data = await response.json();
-console.log("Parsed Response:", data);// Log API response for debugging
+      const data = await response.json();
+      console.log("API Response:", data); // Keep only essential logs
   
       if (!response.ok) throw new Error(data.message || "Something went wrong!");
   
-      toast.success(mode === "login" ? "Login Successful!" : "Registration Successful!", {
+      toast.success(`${mode === "login" ? "Login" : "Registration"} Successful!`, {
         position: "top-right",
         autoClose: 3000,
       });
   
-      if (mode === "login") {
-        console.log("Token received:", data.token); // Debugging for login
+      if (data?.token) {
         localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.user.role); // Save user role
-        console.log(data.user.role);
-        router.refresh(); // Try refreshing to update state
-        if (data?.token) {
-          localStorage.setItem("token", data.token); // Store token before redirecting
-        }
-        
-        setTimeout(() => {
-          if (data?.user?.role === "admin") {
-            console.log("Navigating to /admin");
-            router.push("/admin");
-          } else if (data?.user?.role === "manager") {
-            console.log("Navigating to /manager-dashboard");
-            router.push("/Manager");
-          } else {
-            console.log("Navigating to /Home");
-            router.push("/Home");
-          }
-        }, 2000);
-        
-        
+        localStorage.setItem("role", data?.user?.role || "user"); // Default role fallback
       } else {
-        console.log("Registration successful, received data:", data);
-        router.refresh(); // Try refreshing to update state
-        // Check if the backend returned a token
-        if (data.token) {
-          console.log("Storing registration token:", data.token);
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("role", data.role); // Save user role
-        } else {
-          console.warn("No token received upon registration!");
-        }
-      
-        setFormData({ username: "", email: "", password: "", role: "user" });
-        setTimeout(() => {
-          window.location.href = "/Home";
-        }, 2000);
+        console.warn("No token received upon authentication!");
       }
-      
+  
+      if (mode === "register") {
+        setFormData({ username: "", email: "", password: "", role: "user" });
+      }
+  
+      router.refresh();
+  
+      setTimeout(() => {
+        const userRole = data?.user?.role;
+        router.push(userRole === "admin" ? "/admin" : userRole === "manager" ? "/Manager" : "/Home");
+      }, 2000);
+  
     } catch (error: any) {
-      console.error("Error:", error); // Log errors to console
+      console.error("Error:", error); // Keep error logging
       toast.error(error.message || "Something went wrong.", {
         position: "top-right",
         autoClose: 3000,
@@ -169,7 +145,6 @@ console.log("Parsed Response:", data);// Log API response for debugging
     }
   };
   
-
   return (
     <>
     <ToastContainer /> {/* Add this at the root level */}
@@ -185,8 +160,8 @@ console.log("Parsed Response:", data);// Log API response for debugging
     Fresh ingredients, endless choices. Order now and satisfy your cravings!
   </p>
   <p className="text-sm opacity-85 max-w-lg">
-    Experience a world of flavors with our carefully curated menu. Whether it's a quick bite 
-    or a gourmet meal, we've got something special just for you. 
+    Experience a world of flavors with our carefully curated menu. Whether it&apos;s a quick bite 
+    or a gourmet meal, we&apos;ve got something special just for you. 
   </p>
   <p className="text-sm opacity-85 mt-4 max-w-lg">
     Order in just a few clicks and have your favorite meals delivered hot and fresh right to your door.  
@@ -204,7 +179,7 @@ console.log("Parsed Response:", data);// Log API response for debugging
     <div className="w-full md:w-1/2 bg-white p-12 flex flex-col justify-center">
       {/* Logo */}
       <div className="flex justify-center mb-4">
-        <img src="/logo_wbg.png" alt="Logo" width={100} height={100} />
+        <Image src="/logo_wbg.png" alt="Logo" width={100} height={100} />
       </div>
       
       <h2 className="text-3xl font-semibold text-[#6318af] text-center mb-4">
@@ -284,7 +259,7 @@ console.log("Parsed Response:", data);// Log API response for debugging
         <div className="text-center text-sm">
           {mode === "login" ? (
             <p className="text-gray-500">
-              Don't have an account? 
+              Don&apos;t have an account? 
               <button
                 className="text-[#6318af] font-semibold ml-1"
                 type="button"
