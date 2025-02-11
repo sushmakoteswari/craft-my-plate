@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 
 // ✅ Enable CORS Middleware
 app.use(cors({
-  origin: ["http://localhost:3000", "https://craftmy-plate.vercel.app"], // ✅ Allow Localhost & Deployed Frontend
+  origin: ["http://localhost:3000", "https://craft-my-plate-lovat.vercel.app"], // ✅ Allow Localhost & Deployed Frontend
   credentials: true
 }));
 
