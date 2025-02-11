@@ -28,14 +28,12 @@ const UsersPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       
-      setUsers(
-        response.data.map((user: any) => ({
-          id: user._id,
-          name: user.username,
-          email: user.email,
-          role: user.role,
-        }))
-      );
+      setUsers(response.data.map((user: any) => ({
+        id: user._id,
+        name: user.username,
+        email: user.email,
+        role: user.role,
+      })));
       toast.success("Users fetched successfully!");
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -53,20 +51,12 @@ const UsersPage: React.FC = () => {
     try {
       if (!API_URL) throw new Error("API URL is not defined");
       const token = localStorage.getItem("token");
-
-      const response = await fetch(`${API_URL}/adminusers/${id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedData),
+      
+      const response = await axios.put(`${API_URL}/adminusers/${id}`, updatedData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) throw new Error("Failed to update user");
-
-      const updatedUser = await response.json();
-      setUsers(users.map((user) => (user.id === id ? { ...user, ...updatedUser } : user)));
+      setUsers(users.map((user) => (user.id === id ? { ...user, ...response.data } : user)));
       setEditingUser(null);
       toast.success("User updated successfully!");
     } catch (error) {
@@ -81,16 +71,10 @@ const UsersPage: React.FC = () => {
     try {
       if (!API_URL) throw new Error("API URL is not defined");
       const token = localStorage.getItem("token");
-
-      const response = await fetch(`${API_URL}/adminusers/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      
+      await axios.delete(`${API_URL}/adminusers/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!response.ok) throw new Error("Failed to delete user");
 
       setUsers(users.filter((user) => user.id !== id));
       toast.success("User deleted successfully!");
