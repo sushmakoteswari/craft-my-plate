@@ -1,8 +1,9 @@
 require('./tracing');
+
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const cors = require('cors'); // ✅ Import CORS
+const cors = require('cors');
 const authMiddleware = require('./middleware/authMiddleware');
 
 dotenv.config();
@@ -10,11 +11,40 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Enable CORS Middleware
-app.use(cors({
-  origin: ["http://localhost:3000", "https://craft-my-plate-lovat.vercel.app"], // ✅ Allow Localhost & Deployed Frontend
-  credentials: true
-}));
+const defaultOrigins = [
+  'http://localhost:3000',
+  'https://craft-my-plate-lovat.vercel.app',
+];
+
+function buildAllowedOrigins() {
+  const fromEnv = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return [...new Set([...defaultOrigins, ...fromEnv])];
+}
+
+const allowedOrigins = buildAllowedOrigins();
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      if (/^https:\/\/[\w-]+[\w.-]*\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 // Middleware
 app.use(express.json());
