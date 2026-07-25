@@ -1,4 +1,12 @@
 const Menu = require('../models/Menu');
+const { trace } = require('@opentelemetry/api');
+const {
+  getLogger,
+  rbacDeniedTotal,
+  menuItemsCreatedTotal,
+} = require('../tracing');
+
+const logger = getLogger();
 
 // Get all menu items
 const getMenuItems = async (req, res) => {
@@ -16,6 +24,28 @@ const addMenuItem = async (req, res) => {
 
   // Check if the user has the 'admin' role
   if (req.user.role !== 'admin') {
+    const span = trace.getActiveSpan();
+    if (span) {
+      span.addEvent('rbac.denied', {
+        'user.id': req.user._id.toString(),
+        'user.role': req.user.role,
+        'attempted.route': req.method + ' ' + req.originalUrl,
+        'required.role': 'admin',
+      });
+      span.setAttribute('rbac.denied', true);
+    }
+    rbacDeniedTotal.add(1, {
+      'attempted.route': req.method + ' ' + req.originalUrl,
+      'user.role': req.user.role,
+    });
+    logger.emit({
+      severityText: 'WARN',
+      body: 'RBAC denied',
+      attributes: {
+        'user.role': req.user.role,
+        'attempted.route': req.method + ' ' + req.originalUrl,
+      },
+    });
     return res.status(403).json({ message: 'Access denied' });
   }
 
@@ -28,6 +58,27 @@ const addMenuItem = async (req, res) => {
     });
 
     await newMenuItem.save();
+
+    const span = trace.getActiveSpan();
+    if (span) {
+      span.addEvent('menu.item.created', {
+        'item.id': newMenuItem._id.toString(),
+        'item.name': newMenuItem.name,
+        'item.price': newMenuItem.price,
+      });
+    }
+    menuItemsCreatedTotal.add(1, {
+      'item.name': newMenuItem.name,
+    });
+    logger.emit({
+      severityText: 'INFO',
+      body: 'Menu item created',
+      attributes: {
+        'item.name': newMenuItem.name,
+        'item.price': newMenuItem.price,
+      },
+    });
+
     res.status(201).json(newMenuItem);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

@@ -96,6 +96,74 @@ PORT=5000
 NEXT_PUBLIC_API_BASE_URL=backend_api_url
 ```
 
+## 📊 Observability — Built for Agents of SigNoz Hackathon
+
+RBAC systems fail silently: a manager hitting an admin route just gets a clean `403`,
+and an order exceeding stock can go through unnoticed until someone checks inventory
+manually. This project instruments those exact failure points with OpenTelemetry,
+correlated end-to-end in **SigNoz**.
+
+### What's traced
+| Event | Signal captured |
+|---|---|
+| Auth success/failure | Trace span event + log |
+| RBAC denial (admin/manager routes) | Trace span event, `rbac_denied_total` metric, WARN log |
+| Inventory conflict (order exceeds stock) | Trace span event, `inventory_conflict_total` metric, ERROR log, alert |
+| Menu item created (admin) | Trace span event, `menu_items_created_total` metric, INFO log |
+
+All four signal types — traces, metrics, logs, alerts — are correlated by trace ID:
+clicking a log line jumps straight to its trace in SigNoz.
+
+### Dashboard
+- Inventory Conflicts (by item)
+- RBAC Denials (by attempted route)
+- Orders by Outcome (success vs. stock conflict)
+- Menu Items Created
+- API Latency by Route
+- Live trace-linked logs
+
+![SigNoz dashboard — Craft my plate](docs/signoz-dashboard.png)
+
+*Panels: inventory conflicts by item, RBAC denials by route, API latency, orders by outcome, trace-linked logs (Auth success / Menu item created), and menu creation metrics.*
+
+### Running the observability stack locally
+
+Requires SigNoz self-hosted via Docker Compose, with the OTLP HTTP collector
+exposed on `:4318` (UI typically on `:8080`).
+
+Start the backend (OpenTelemetry in `backend/tracing.js`; service name `craft-my-plate-backend`):
+
+```sh
+cd backend
+node index.js
+```
+
+Once SigNoz and the backend are both running, every request is traced automatically — no separate agent needed.
+
+**Helper scripts** (from `backend/`):
+
+```sh
+node scripts/test-order-spans.js    # stock conflict + RBAC on orders
+npm run seed-italian-menu           # admin creates Italian menu items
+npm run load-metrics                # optional HTTP load for latency panels
+```
+
+Trigger each scenario (base URL `http://localhost:5000/api`, Bearer token where noted):
+
+```sh
+POST /orders              # valid qty → 201, orders_placed_total{status="success"}
+POST /orders              # quantity > stock → 409, inventory.conflict event + alert
+GET /orders/allorders     # non-admin/manager token → 403, rbac.denied event
+GET /adminusers           # non-admin token → 403, rbac.denied event
+POST /menu                  # admin token → 201, menu.item.created event
+```
+
+Then check **SigNoz → Traces / Metrics / Logs / Dashboards**, filtered to
+service `craft-my-plate-backend`.
+
+🎥 **Demo video:** [add link]  
+📝 **Blog:** [add link]
+
 ## 📸 Screenshots
 ### Register Page:
 **Error Handling for Empty Fields**

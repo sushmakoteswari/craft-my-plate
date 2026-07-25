@@ -10,23 +10,38 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null) // null represents loading state
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
   const router = useRouter()
-  const [authUpdated, setAuthUpdated] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token")
-    const userRole = localStorage.getItem("role")
-    console.log("Checking auth state:", { token, userRole });
-    
-    if (!token || !userRole) {
+    if (!token) {
+      setIsAuthorized(false)
       router.push("/")
       return
     }
 
-    setIsAuthorized(allowedRoles.includes(userRole));
-    setAuthUpdated((prev) => !prev);
-
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    fetch(`${apiUrl}/authRoute/protected`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.message !== "Access granted" || !data.user?.role) {
+          localStorage.removeItem("token")
+          localStorage.removeItem("role")
+          setIsAuthorized(false)
+          router.push("/")
+          return
+        }
+        const userRole = data.user.role as string
+        localStorage.setItem("role", userRole)
+        setIsAuthorized(allowedRoles.includes(userRole))
+      })
+      .catch(() => {
+        setIsAuthorized(false)
+        router.push("/")
+      })
   }, [router, allowedRoles])
 
   if (isAuthorized === null) {
